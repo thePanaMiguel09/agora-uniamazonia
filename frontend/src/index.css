@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* En tu archivo global CSS o en el componente */
+.swapy-dragging {
+    opacity: 0.7;
+    transform: scale(1.05);
+    z-index: 1000;
+  }
+  
+  .swapy-ghost {
+    opacity: 0.4;
+  }
+  
+  .swapy-container {
+    position: relative;
+  }
