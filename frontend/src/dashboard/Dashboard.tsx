@@ -22,7 +22,7 @@ export default function Dashboard() {
   const { user } = useAppContext();
   const roleId = (user?.fk_id_rol ?? DEFAULT_ROLE) as RoleId;
 
-  const { stats, error } = useDashboardData();
+  const { stats} = useDashboardData();
   const alerts = useAlerts();
 
   const quickActions = useMemo(
@@ -34,14 +34,6 @@ export default function Dashboard() {
     <div className="max-w-7xl mx-auto p-6">
       <DashboardHeader />
 
-      {error && (
-        <div
-          role="alert"
-          className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
-          {error}
-        </div>
-      )}
 
       <StatsGrid stats={stats} alertCount={alerts.length} />
 
