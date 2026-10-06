@@ -1,11 +1,12 @@
-import axios from 'axios';
-import { apiUrl } from '../../config';
+import axios from "axios";
+import { apiUrl } from "../../config";
 import { Activity, Eye, EyeOff, User, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from "../context/AppContext";
 // 1. Importa el componente Particles
-import Particles from '../components/Particles';
+import Particles from "../components/Particles";
+import { toast } from "sonner";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -26,21 +27,23 @@ export default function Login() {
       const { token, user } = response.data;
       localStorage.setItem("token", token);
       login(user);
-      navigate("/dashboard");
+      navigate("/");
     } catch (error) {
       setIsLoading(false);
-      alert("Usuario o contraseña incorrectos");
+      // alert("Usuario o contraseña incorrectos");
+      toast.error("Usuario o contraseña incorrectos", {
+        position: "top-center",
+      });
     }
   };
 
   return (
     // 2. Agregamos 'relative' y 'overflow-hidden' al contenedor principal
     <div className="relative min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4 overflow-hidden">
-
       {/* 3. Capa de Partículas (Fondo) */}
       <div className="absolute inset-0 z-0">
         <Particles
-          particleColors={["#367c29", "#0bb116"]} // Colores acordes a tu marca
+          particleColors={["#10b981", "#10b981"]} // Colores acordes a tu marca
           particleCount={500}
           particleSpread={12}
           speed={0.15}
@@ -57,14 +60,16 @@ export default function Login() {
         {/* Logo y título */}
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-[#367c29] rounded-2xl shadow-lg">
+            <div className="p-3 bg-[#059669] rounded-2xl shadow-lg">
               <Activity size={40} className="text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-[#367c29]">
-            LabControl Pro
+          <h1 className="text-3xl font-bold text-[#059669]">
+            Agora Uniamazonia
           </h1>
-          <p className="text-gray-600 mt-2">Sistema de gestión de laboratorios</p>
+          <p className="text-gray-600 mt-2">
+            Sistema de Gestión de Laboratorios
+          </p>
         </div>
 
         {/* Formulario */}
@@ -76,7 +81,10 @@ export default function Login() {
           <div className="space-y-6">
             {/* Usuario */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Usuario
               </label>
               <div className="relative">
@@ -89,7 +97,7 @@ export default function Login() {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#367c29] focus:border-transparent transition-all duration-200"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-all duration-200"
                   placeholder="Ingresa tu usuario"
                 />
               </div>
@@ -97,7 +105,10 @@ export default function Login() {
 
             {/* Contraseña */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Contraseña
               </label>
               <div className="relative">
@@ -110,7 +121,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#367c29] focus:border-transparent transition-all duration-200"
+                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-all duration-200"
                   placeholder="Ingresa tu contraseña"
                 />
                 <button
@@ -118,7 +129,11 @@ export default function Login() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
-                  {showPassword ? <EyeOff size={20} className="text-gray-400" /> : <Eye size={20} className="text-gray-400" />}
+                  {showPassword ? (
+                    <EyeOff size={20} className="text-gray-400" />
+                  ) : (
+                    <Eye size={20} className="text-gray-400" />
+                  )}
                 </button>
               </div>
             </div>
@@ -126,7 +141,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#367c29] text-white py-3 px-4 rounded-xl font-medium hover:bg-[#2a6a21] transition-all duration-200 disabled:opacity-50"
+              className="w-full bg-[#059669] text-white py-3 px-4 rounded-xl font-medium hover:bg-[#024530] transition-all duration-200 disabled:opacity-50"
             >
               {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
             </button>
@@ -135,7 +150,7 @@ export default function Login() {
 
         {/* Footer */}
         <div className="text-center text-gray-500 text-sm">
-          <p>© 2026 LabControl Pro. Todos los derechos reservados.</p>
+          <p>© 2026 Agora Uniamazonia. Todos los derechos reservados.</p>
         </div>
       </div>
     </div>

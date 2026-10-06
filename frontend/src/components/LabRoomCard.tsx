@@ -73,7 +73,7 @@ export default function LabRoomCard({
 
   const handleViewDetails = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/project/${id}`, {
+    navigate(`/projects/${id}`, {
       state: { nombre, descripcion }
     });
   };

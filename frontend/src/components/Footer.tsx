@@ -8,17 +8,17 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Información del Sistema */}
           <div className="col-span-1 md:col-span-2">
-            <h3 className="text-lg font-bold text-emerald-400 mb-4">
+            <h3 className="text-lg font-semibold mb-4">
               Sistema de Gestión de Laboratorios
             </h3>
             <p className="text-gray-300 mb-4">
               Plataforma integral para el monitoreo y control de laboratorios,
               sensores ambientales y automatización de procesos.
             </p>
-            <div className="flex items-center space-x-2 text-sm text-gray-400">
+            {/* <div className="flex items-center space-x-2 text-sm text-gray-400">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
               <span>Sistema en Tiempo Real</span>
-            </div>
+            </div> */}
           </div>
 
           {/* Enlaces Rápidos */}
@@ -36,9 +36,9 @@ export default function Footer() {
           <div>
             <h4 className="text-lg font-semibold mb-4">Soporte</h4>
             <ul className="space-y-2 text-gray-300">
-              <li>📧 soporte@labcontrol.com</li>
-              <li>📞 +57 1 234 5678</li>
-              <li>🕒 24/7 Monitoreo</li>
+              <li>📧 semillero2026robotica@gmail.com</li>
+              <li>📞 +57 310 8425318</li>
+              <li>🕒 Monitoreo en tiempo real</li>
             </ul>
           </div>
         </div>
@@ -47,7 +47,7 @@ export default function Footer() {
         <div className="border-t border-gray-700 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-gray-400 text-sm">
-              © {currentYear} LabControl System. Todos los derechos reservados.
+              © {currentYear} Agora Uniamazonia. Todos los derechos reservados.
             </div>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <span className="text-gray-400 text-sm">v1.0.0</span>

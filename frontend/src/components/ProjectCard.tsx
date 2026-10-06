@@ -28,7 +28,7 @@ const ProjectCard = ({
     e.stopPropagation();
     e.preventDefault();
     console.log(`Navigating from ${nombre} to /stand`);
-    navigate(`/stand/${id}`, { state: { nombre, descripcion, id } });
+    navigate(`/stands/${id}`, { state: { nombre, descripcion, id } });
   };
 
   const handleEdit = (e: React.MouseEvent) => {
@@ -130,4 +130,4 @@ const ProjectCard = ({
   );
 };
 
-export default ProjectCard;
+export default ProjectCard;

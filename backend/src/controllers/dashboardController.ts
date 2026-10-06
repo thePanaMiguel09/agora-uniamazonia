@@ -7,17 +7,11 @@ export const getStats = async (req: Request, res: Response) => {
     const [rows] = await pool.query<RowDataPacket[]>('CALL OBTENER_ESTADISTICAS_DASHBOARD()');
     const stats = rows[0][0]; // Extract the first row of the first result set
     
-    // Calcular total de dispositivos reales
-    const [[{ act }]] = await pool.query<any>('SELECT COUNT(*) as act FROM ACTUADOR');
-    const [[{ cam }]] = await pool.query<any>('SELECT COUNT(*) as cam FROM CAMARA_SEGURIDAD');
-    const [[{ ca }]] = await pool.query<any>('SELECT COUNT(*) as ca FROM CONTROLADOR_AIRE');
-    
-    stats.totalDevices = Number(act) + Number(cam) + Number(ca);
-    stats.activeSensors = 0; // Se remueve el dato quemado (antes era 36)
-    
     res.json(stats);
+    console.log('Estadísticas del dashboard obtenidas correctamente:', stats);
   } catch (error) {
     console.error('Error al obtener estadísticas del dashboard:', error);
+    
     res.status(500).json({ message: 'Error al obtener estadísticas' });
   }
 };
