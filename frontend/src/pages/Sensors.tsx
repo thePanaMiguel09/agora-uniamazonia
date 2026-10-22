@@ -170,6 +170,10 @@ function SensorCard({
 
   const Icon = meta.icon;
 
+  const fg = meta.fg ?? "text-white";
+  const fgMuted = meta.fgMuted ?? "text-white/80";
+  const iconBg = meta.iconBg ?? "bg-white/20";
+
   const estadoConfig: Record<
     string,
     { label: string; color: string; dot: string }
@@ -199,35 +203,41 @@ function SensorCard({
     >
       {/* Header con gradiente */}
       <div
-        className={`bg-gradient-to-r ${meta.gradient} px-3 py-1.5 flex items-center justify-between`}
+        className={`bg-gradient-to-r ${meta.gradient} px-3 py-1.5 flex items-center justify-between gap-2`}
       >
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-white/20 backdrop-blur-sm rounded-md flex items-center justify-center">
-            <Icon size={14} className="text-white" />
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className={`w-6 h-6 ${iconBg} rounded-md flex items-center justify-center shrink-0`}
+          >
+            <Icon size={20} className={meta.fg ?? "text-white"} />{" "}
           </div>
-          <div>
-            <h3 className="text-white font-bold text-sm leading-tight truncate max-w-[160px]">
+          <div className="min-w-0">
+            <h3
+              className={`${fg} font-bold text-sm leading-tight truncate max-w-[160px]`}
+            >
               {sensor.nombre}
             </h3>
-            <p className="text-white/70 text-[10px] font-medium">{meta.name}</p>
+            <p className={`${fgMuted} text-[11px] font-medium`}>{meta.name}</p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-1.5 py-0.5 rounded-full">
+        <div className="flex items-center gap-1 shrink-0">
+          <span className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-full shadow-sm">
             <span
-              className={`w-1.5 h-1.5 rounded-full ${est.dot} animate-pulse`}
+              className={`w-1.5 h-1.5 rounded-full ${est.dot} animate-pulse motion-reduce:animate-none`}
             />
-            <span className="text-white text-[10px] font-bold uppercase tracking-wider">
+            <span className="text-gray-800 text-[10px] font-bold uppercase tracking-wider">
               {est.label}
             </span>
           </span>
           {!isOperador && (
             <button
+              type="button"
               onClick={() => onDelete(sensor.id)}
-              className="p-1 text-white/40 hover:text-white hover:bg-white/20 rounded-md transition-all duration-200 opacity-0 group-hover:opacity-100"
+              aria-label={`Eliminar ${sensor.nombre}`}
               title="Eliminar sensor"
+              className={`p-1.5 ${fg} opacity-70 hover:opacity-100 focus-visible:opacity-100 hover:bg-black/10 rounded-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}
             >
-              <Trash2 size={13} />
+              <Trash2 size={14} aria-hidden="true" />
             </button>
           )}
         </div>
@@ -240,7 +250,7 @@ function SensorCard({
           <span className="text-xs font-medium">{sensor.ubicacion}</span>
         </div>
         {sensor.descripcion && (
-          <span className="text-[10px] text-gray-400 italic truncate max-w-[140px]">
+          <span className="text-[11px] text-gray-500 italic truncate max-w-[140px]">
             {sensor.descripcion}
           </span>
         )}
