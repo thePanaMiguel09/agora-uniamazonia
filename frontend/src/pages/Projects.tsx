@@ -272,7 +272,7 @@ const Projects = () => {
                 setEditingProject(null);
                 setShowCreateForm(true);
               }}
-              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2 cursor-pointer"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 cursor-pointer"
             >
               <span className="text-lg">+</span>
               Nuevo Proyecto
@@ -305,7 +305,7 @@ const Projects = () => {
         >
           {bombas.length === 0 ? (
             // Estado vacío
-            <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-blue-500 rounded-xl bg-gray-300">
+            <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-emerald-500 rounded-xl bg-gray-300">
               <div className="text-center">
                 <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">📥</span>
@@ -318,7 +318,7 @@ const Projects = () => {
                 </p>
                 <button
                   onClick={() => setIsPanelOpen(true)}
-                  className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 items-center gap-2 cursor-pointer"
+                  className="bg-gradient-to-r from-emerald-600 to-green-600 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 items-center gap-2 cursor-pointer"
                 >
                   Abrir Panel de Componentes
                 </button>
