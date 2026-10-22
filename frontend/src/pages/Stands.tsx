@@ -188,7 +188,7 @@ const Shelves = () => {
           </h1>
           <button
             onClick={() => setIsPanelOpen(true)}
-            className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2 cursor-pointer"
+            className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2 cursor-pointer"
           >
             <span>+</span>
             Agregar Componente
@@ -196,10 +196,13 @@ const Shelves = () => {
         </div>
 
         {/* Área de información */}
-        <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-6">
-          <p className="text-blue-800 text-sm">
+        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl mb-6">
+          <p className="text-emerald-900 text-xl font-light">
             Para agregar una luz o válvula a un estante, haz clic en "Agregar
-            Componente" para abrir el panel, y luego <strong>arrastra</strong>{" "}
+            Componente" para abrir el panel, y luego{" "}
+            <strong className="font-extrabold text-emerald-700">
+              arrastra
+            </strong>{" "}
             el dispositivo directamente sobre la tarjeta de la estantería
             correspondiente.
           </p>
@@ -218,7 +221,7 @@ const Shelves = () => {
                 setEditingEstanteria(null);
                 setShowCreateForm(true);
               }}
-              className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2 cursor-pointer"
+              className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2 cursor-pointer"
             >
               <span className="text-lg">+</span>
               Nueva Estantería
