@@ -8,6 +8,6 @@
       "strict": true,
     "skipLibCheck": true
   },
-  "exclude": ["createUser.ts"]
+  "exclude": ["src/utils/scripts/createUser.ts"]
 }
   

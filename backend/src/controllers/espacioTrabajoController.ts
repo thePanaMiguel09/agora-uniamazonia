@@ -1,110 +1,288 @@
-import { pool } from '../config/db';
-import { Request, Response } from 'express';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { Request, Response } from "express";
+import { RowDataPacket } from "mysql2";
+import { pool } from "../config/db";
 
-// Listar espacios de trabajo
-export const OBTENER_ESPACIOS_TRABAJO = async (req: Request, res: Response) => {
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id_usuario: number;
+    fk_id_rol: number;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * @openapi
+ * /api/proyectos/{idproyecto}/espacios-trabajo:
+ *   get:
+ *     summary: Listar espacios de trabajo de un proyecto
+ *     tags: [Espacios de Trabajo]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: idproyecto
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Lista obtenida correctamente.
+ *       403:
+ *         description: Sin permisos para ver este laboratorio.
+ */
+export const OBTENER_ESPACIOS_TRABAJO = async (
+  req: AuthenticatedRequest,
+  res: Response,
+): Promise<Response> => {
   try {
     const { idproyecto } = req.params;
-    const user = (req as any).user;
-    
+    const user = req.user;
+
     if (!idproyecto) {
-      return res.status(400).json({ message: 'El parámetro idproyecto es requerido' });
+      return res
+        .status(400)
+        .json({ error: "El parámetro idproyecto es requerido." });
     }
 
-    // Verificar permiso (Solo Admin ve todo, otros deben estar asignados)
+    if (!user) {
+      return res
+        .status(401)
+        .json({ error: "No autorizado. Usuario no autenticado." });
+    }
+
     if (user.fk_id_rol !== 1) {
       const [assignment] = await pool.query<RowDataPacket[]>(
-        'SELECT * FROM USUARIO_LABORATORIO WHERE FK_ID_USUARIO = ? AND FK_ID_LABORATORIO = ?',
-        [user.id_usuario, idproyecto]
+        "SELECT * FROM USUARIO_LABORATORIO WHERE FK_ID_USUARIO = ? AND FK_ID_LABORATORIO = ?",
+        [user.id_usuario, idproyecto],
       );
       if (assignment.length === 0) {
-        return res.status(403).json({ message: 'No tienes permiso para ver este laboratorio' });
+        return res
+          .status(403)
+          .json({
+            error: "No tienes permiso para ver este laboratorio o proyecto.",
+          });
       }
     }
 
-    const [rows] = await pool.query<RowDataPacket[]>('CALL OBTENER_ESPACIOS_TRABAJO(?)', [idproyecto]);
+    const [rows] = await pool.query<RowDataPacket[][]>(
+      "CALL OBTENER_ESPACIOS_TRABAJO(?)",
+      [idproyecto],
+    );
     const espaciosTrabajo = rows[0] || [];
-    res.json(espaciosTrabajo);
-  } catch (error) {
-    console.error('Error al obtener espacios de trabajo:', error);
-    res.status(500).json({ message: 'Error al obtener espacios de trabajo' });
+
+    return res.status(200).json(espaciosTrabajo);
+  } catch (error: unknown) {
+    console.error(" Error al obtener espacios de trabajo:", error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Error al obtener espacios de trabajo";
+    return res.status(500).json({ error: message });
   }
 };
 
-// Crear espacio de trabajo
-export const CREAR_ESPACIO_TRABAJO = async (req: Request, res: Response) => {
+/**
+ * @openapi
+ * /api/espacios-trabajo:
+ *   post:
+ *     summary: Crear un espacio de trabajo
+ *     tags: [Espacios de Trabajo]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idproyecto
+ *               - nombre
+ *             properties:
+ *               idproyecto:
+ *                 type: integer
+ *               nombre:
+ *                 type: string
+ *               descripcion:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Espacio de trabajo creado correctamente.
+ */
+export const CREAR_ESPACIO_TRABAJO = async (
+  req: AuthenticatedRequest,
+  res: Response,
+): Promise<Response> => {
   try {
     const { idproyecto, nombre, descripcion } = req.body;
-    const user = (req as any).user;
+    const user = req.user;
 
-    // Verificar permiso
+    if (!idproyecto || !nombre) {
+      return res
+        .status(400)
+        .json({ error: "El ID del proyecto y el nombre son obligatorios." });
+    }
+
+    if (!user) {
+      return res
+        .status(401)
+        .json({ error: "No autorizado. Usuario no autenticado." });
+    }
+
     if (user.fk_id_rol !== 1) {
       const [assignment] = await pool.query<RowDataPacket[]>(
-        'SELECT * FROM USUARIO_LABORATORIO WHERE FK_ID_USUARIO = ? AND FK_ID_LABORATORIO = ?',
-        [user.id_usuario, idproyecto]
+        "SELECT * FROM USUARIO_LABORATORIO WHERE FK_ID_USUARIO = ? AND FK_ID_LABORATORIO = ?",
+        [user.id_usuario, idproyecto],
       );
       if (assignment.length === 0) {
-        return res.status(403).json({ message: 'No tienes permiso para crear espacios de trabajo en este proyecto   ' });
+        return res
+          .status(403)
+          .json({
+            error:
+              "No tienes permiso para crear espacios de trabajo en este proyecto.",
+          });
       }
     }
 
-    const [result] = await pool.query<RowDataPacket[]>(
-      'CALL CREAR_ESPACIO_TRABAJO(?, ?, ?)',
-      [idproyecto, nombre, descripcion]
+    const [result] = await pool.query<RowDataPacket[][]>(
+      "CALL CREAR_ESPACIO_TRABAJO(?, ?, ?)",
+      [idproyecto, nombre, descripcion || null],
     );
-    
-    const insertId = result[0][0].insertId;
+
+    const insertId =
+      result[0]?.[0]?.insertId || result[0]?.[0]?.ID_ESPACIO_TRABAJO || 0;
 
     const newEspacioTrabajo = {
       id: insertId,
-      code: `EST-${String(insertId).padStart(3, '0')}`,
+      code: `EST-${String(insertId).padStart(3, "0")}`,
       nombre,
       descripcion,
       idproyecto,
       createdAt: new Date().toISOString(),
       devices: 0,
-      sensors: 0
+      sensors: 0,
     };
 
-    res.status(201).json({
-      message: 'Espacio de trabajo creado correctamente',
-      espacioTrabajo: newEspacioTrabajo
+    return res.status(201).json({
+      message: "Espacio de trabajo creado correctamente",
+      espacioTrabajo: newEspacioTrabajo,
     });
-  } catch (error) {
-    console.error('Error al crear espacio de trabajo:', error);
-    res.status(500).json({ message: 'Error al crear espacio de trabajo' });
+  } catch (error: unknown) {
+    console.error(" Error al crear espacio de trabajo:", error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Error al crear espacio de trabajo";
+    return res.status(500).json({ error: message });
   }
 };
 
-// Actualizar espacio de trabajo
-export const ACTUALIZAR_ESPACIO_TRABAJO = async (req: Request, res: Response) => {
+/**
+ * @openapi
+ * /api/espacios-trabajo/{id}:
+ *   put:
+ *     summary: Actualizar espacio de trabajo
+ *     tags: [Espacios de Trabajo]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nombre
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *               descripcion:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Espacio de trabajo actualizado correctamente.
+ */
+export const ACTUALIZAR_ESPACIO_TRABAJO = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
   try {
     const { id } = req.params;
     const { nombre, descripcion } = req.body;
 
-    await pool.query(
-      'CALL ACTUALIZAR_ESPACIO_TRABAJO(?, ?, ?)',
-      [id, nombre, descripcion]
-    );
+    if (!id || !nombre) {
+      return res
+        .status(400)
+        .json({ error: "El ID y el nombre son obligatorios." });
+    }
 
-    res.json({ message: 'Espacio de trabajo actualizado correctamente' });
-  } catch (error) {
-    console.error('Error al actualizar espacio de trabajo:', error);
-    res.status(500).json({ message: 'Error al actualizar espacio de trabajo' });
+    await pool.query("CALL ACTUALIZAR_ESPACIO_TRABAJO(?, ?, ?)", [
+      id,
+      nombre,
+      descripcion || null,
+    ]);
+
+    return res
+      .status(200)
+      .json({ message: "Espacio de trabajo actualizado correctamente" });
+  } catch (error: unknown) {
+    console.error(" Error al actualizar espacio de trabajo:", error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Error al actualizar espacio de trabajo";
+    return res.status(500).json({ error: message });
   }
 };
 
-// Eliminar espacio de trabajo
-export const ELIMINAR_ESPACIO_TRABAJO = async (req: Request, res: Response) => {
+/**
+ * @openapi
+ * /api/espacios-trabajo/{id}:
+ *   delete:
+ *     summary: Eliminar espacio de trabajo
+ *     tags: [Espacios de Trabajo]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Espacio de trabajo eliminado correctamente.
+ */
+export const ELIMINAR_ESPACIO_TRABAJO = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
   try {
     const { id } = req.params;
 
-    await pool.query('CALL ELIMINAR_ESPACIO_TRABAJO(?)', [id]);
+    if (!id) {
+      return res
+        .status(400)
+        .json({ error: "El ID del espacio de trabajo es obligatorio." });
+    }
 
-    res.json({ message: 'Espacio de trabajo eliminado correctamente' });
-  } catch (error) {
-    console.error('Error al eliminar espacio de trabajo:', error);
-    res.status(500).json({ message: 'Error al eliminar espacio de trabajo' });
+    await pool.query("CALL ELIMINAR_ESPACIO_TRABAJO(?)", [id]);
+
+    return res
+      .status(200)
+      .json({ message: "Espacio de trabajo eliminado correctamente" });
+  } catch (error: unknown) {
+    console.error(" Error al eliminar espacio de trabajo:", error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Error al eliminar espacio de trabajo";
+    return res.status(500).json({ error: message });
   }
 };

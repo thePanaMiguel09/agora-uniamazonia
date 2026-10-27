@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const authService_1 = require("./src/services/authService");
+const authService_1 = require("../../services/authService");
 /**
  * Script de utilidad para crear un usuario en el sistema.
  * Puedes cambiar los valores aquí para crear diferentes usuarios.
@@ -19,7 +19,7 @@ async function run() {
         console.log("Respuesta del servidor:", JSON.stringify(result, null, 2));
     }
     catch (error) {
-        console.error("❌ Error al crear el usuario:");
+        console.error(" Error al crear el usuario:");
         console.error(error.message);
     }
     finally {
