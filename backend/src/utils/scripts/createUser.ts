@@ -1,4 +1,4 @@
-import { registerUser } from './src/services/authService';
+import { registerUser } from '../../services/authService';
 
 /**
  * Script de utilidad para crear un usuario en el sistema.
@@ -27,7 +27,7 @@ async function run() {
     console.log("Respuesta del servidor:", JSON.stringify(result, null, 2));
     
   } catch (error: any) {
-    console.error("❌ Error al crear el usuario:");
+    console.error(" Error al crear el usuario:");
     console.error(error.message);
   } finally {
     process.exit(0);

@@ -1,22 +1,31 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import Joi from 'joi';
-import { pool } from '../config/db';
-import { RowDataPacket } from 'mysql2';
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import Joi from "joi";
+import { pool } from "../config/db";
+import { RowDataPacket, ResultSetHeader } from "mysql2";
 
+/**
+ * Esquema de validación para el registro de usuarios.
+ */
 const registerSchema = Joi.object({
   nombre_completo: Joi.string().required(),
   username: Joi.string().required(),
   password: Joi.string().required(),
   fk_id_rol: Joi.number().required(),
-  email: Joi.string().required(),
+  email: Joi.string().email().required(),
 });
 
+/**
+ * Esquema de validación para el inicio de sesión.
+ */
 const loginSchema = Joi.object({
   username: Joi.string().required(),
   password: Joi.string().required(),
 });
 
+/**
+ * Interfaz que representa la estructura de un usuario recuperado de la base de datos.
+ */
 interface User extends RowDataPacket {
   id_usuario: number;
   nombre_completo: string;
@@ -26,55 +35,120 @@ interface User extends RowDataPacket {
   email: string;
 }
 
-export const registerUser = async (nombre_completo: string, username: string, password: string, fk_id_rol: number, email: string) => {
-  // Validar todos los campos antes de seguir
-  const { error } = registerSchema.validate({ nombre_completo, username, password, fk_id_rol, email });
-  if (error) throw new Error(error.details[0].message);
+/**
+ * Interfaz que define la estructura de la respuesta exitosa al iniciar sesión.
+ */
+export interface LoginResponse {
+  token: string;
+  user: {
+    id_usuario: number;
+    username: string;
+    fk_id_rol: number;
+  };
+}
+
+/**
+ * Registra un nuevo usuario en el sistema, cifrando su contraseña y ejecutando validaciones previas.
+ *
+ * @param {string} nombre_completo - Nombre completo del usuario.
+ * @param {string} username - Nombre de usuario único.
+ * @param {string} password - Contraseña en texto plano.
+ * @param {number} fk_id_rol - ID del rol asignado.
+ * @param {string} email - Correo electrónico del usuario.
+ * @returns {Promise<ResultSetHeader>} Resultado de la ejecución en la base de datos.
+ */
+export const registerUser = async (
+  nombre_completo: string,
+  username: string,
+  password: string,
+  fk_id_rol: number,
+  email: string,
+): Promise<ResultSetHeader> => {
+  // Validar campos de entrada con Joi
+  const { error } = registerSchema.validate({
+    nombre_completo,
+    username,
+    password,
+    fk_id_rol,
+    email,
+  });
+  if (error) {
+    throw new Error(error.details[0].message);
+  }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  
+
   try {
-    // El procedimiento crear_usuario ahora recibe el estado (1 por defecto)
-    const estado_default = 1;
-    const [result] = await pool.query(
-      'CALL crear_usuario(?, ?, ?, ?, ?, ?)',
-      [nombre_completo, username, hashedPassword, email, estado_default, fk_id_rol]
+    const estado_default = 1; // 1 = Activo por defecto
+    const [result] = await pool.query<ResultSetHeader>(
+      "CALL crear_usuario(?, ?, ?, ?, ?, ?)",
+      [
+        nombre_completo,
+        username,
+        hashedPassword,
+        email,
+        estado_default,
+        fk_id_rol,
+      ],
     );
     return result;
-  } catch (error: any) {
-    if (error.sqlState === '45000') {
-      throw new Error(error.message); // El mensaje que lanza el SP "El usuario o email ya existe"
+  } catch (error: unknown) {
+    const err = error as { sqlState?: string; message?: string };
+    if (err.sqlState === "45000") {
+      throw new Error(err.message || "El usuario o email ya existe.");
     }
     throw error;
   }
-}
+};
 
-export const login = async (username: string, password: string) => {
-  // Validar datos de entrada
+/**
+ * Autentica a un usuario validando sus credenciales y emitiendo un token JWT firmado.
+ *
+ * @param {string} username - Nombre de usuario.
+ * @param {string} password - Contraseña en texto plano.
+ * @returns {Promise<LoginResponse>} Objeto con el token JWT y los datos básicos del usuario.
+ */
+export const login = async (
+  username: string,
+  password: string,
+): Promise<LoginResponse> => {
+  // Validar datos de entrada con Joi
   const { error } = loginSchema.validate({ username, password });
-  if (error) throw new Error(error.details[0].message);
+  if (error) {
+    throw new Error(error.details[0].message);
+  }
 
-  // Consultar usuario con procedimiento almacenado
-  const [rows] = await pool.query<RowDataPacket[]>(
-    'CALL OBTENER_USUARIO_POR_USERNAME(?)',
-    [username]
+  // Consultar usuario mediante procedimiento almacenado
+  const [rows] = await pool.query<RowDataPacket[][]>(
+    "CALL OBTENER_USUARIO_POR_USERNAME(?)",
+    [username],
   );
-  
-  // En SPs, rows[0] contiene los resultados del SELECT
-  const users = rows[0] as User[];
+
+  const users = (rows[0] || []) as User[];
   const user = users[0];
-  
-  if (!user) throw new Error('Usuario o contraseña inválidos');
 
-  // Verificar contraseña
+  if (!user) {
+    throw new Error("Usuario o contraseña inválidos");
+  }
+
+  // Verificar coincidencia de contraseña
   const isValid = await bcrypt.compare(password, user.password);
-  if (!isValid) throw new Error('Usuario o contraseña inválidos');
+  if (!isValid) {
+    throw new Error("Usuario o contraseña inválidos");
+  }
 
-  // Generar token JWT
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error(
+      "Error crítico de configuración: JWT_SECRET no está definido.",
+    );
+  }
+
+  // Generar token JWT con expiración de 1 hora
   const token = jwt.sign(
     { id_usuario: user.id_usuario, fk_id_rol: user.fk_id_rol },
-    process.env.JWT_SECRET!,
-    { expiresIn: '1h' }
+    jwtSecret,
+    { expiresIn: "1h" },
   );
 
   return {

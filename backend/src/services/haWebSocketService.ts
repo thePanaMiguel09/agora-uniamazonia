@@ -1,6 +1,6 @@
-import { WebSocketServer, WebSocket } from 'ws';
-import axios from 'axios';
-import dotenv from 'dotenv';
+import WebSocket, { WebSocketServer } from "ws";
+import axios from "axios";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -12,136 +12,168 @@ const HA_HTTP_URL = `http://${HA_HOST}/api`;
 let haWs: WebSocket | null = null;
 const unityClients: Set<WebSocket> = new Set();
 
-export function broadcastToUnity(messageObj: any) {
+/**
+ * Envía un objeto de mensaje en formato JSON a todos los clientes de Unity/Frontend conectados.
+ *
+ * @param {unknown} messageObj - Objeto de datos a transmitir.
+ */
+export function broadcastToUnity(messageObj: unknown): void {
   const jsonString = JSON.stringify(messageObj);
-  unityClients.forEach(client => {
+  unityClients.forEach((client: WebSocket) => {
     if (client.readyState === WebSocket.OPEN) {
-      // Enviamos el objeto parseado para que Unity lo entienda
       client.send(jsonString);
     }
   });
 }
 
-function connectToHA() {
+/**
+ * Establece y gestiona la conexión WebSocket con Home Assistant.
+ * Maneja la autenticación, la solicitud inicial de estados y la suscripción a eventos en tiempo real.
+ */
+function connectToHA(): void {
   haWs = new WebSocket(HA_WS_URL);
 
-  haWs.on('open', () => {
-    console.log('Conectado a HA WebSocket');
-    // Autenticación
-    haWs?.send(JSON.stringify({ type: 'auth', access_token: HA_TOKEN }));
+  haWs.on("open", () => {
+    console.log("Conectado al WebSocket de Home Assistant");
+    haWs?.send(JSON.stringify({ type: "auth", access_token: HA_TOKEN }));
   });
 
-  haWs.on('message', (data: string) => {
+  haWs.on("message", (data: WebSocket.RawData) => {
     try {
-      const msg = JSON.parse(data);
+      const msg = JSON.parse(data.toString());
 
-      if (msg.type === 'auth_ok') {
-        console.log('Autenticación exitosa con HA');
+      if (msg.type === "auth_ok") {
+        console.log("Autenticación exitosa con Home Assistant");
 
-        // 1. PRIMERO: Solicitar todos los estados actuales para conocer los sensores registrados
-        haWs?.send(JSON.stringify({
-          id: 1,
-          type: 'get_states'
-        }));
-
-        // 2. SEGUNDO: Suscribirse a cambios futuros (usamos ID 2 para no chocar)
-        haWs?.send(JSON.stringify({
-          id: 2,
-          type: 'subscribe_events',
-          event_type: 'state_changed'
-        }));
-      }
-
-      // MANEJO DE LA LISTA INICIAL DE SENSORES (Respuesta a get_states)
-      else if (msg.type === 'result' && Array.isArray(msg.result)) {
-        const sensoresYSwitches = msg.result.filter((entity: any) =>
-          entity.entity_id.includes('sensor') || entity.entity_id.includes('switch')
+        haWs?.send(
+          JSON.stringify({
+            id: 1,
+            type: "get_states",
+          }),
         );
 
-        // --- ESTO ES LO QUE DEBES AGREGAR PARA COMPROBAR ---
+        haWs?.send(
+          JSON.stringify({
+            id: 2,
+            type: "subscribe_events",
+            event_type: "state_changed",
+          }),
+        );
+      } else if (msg.type === "result" && Array.isArray(msg.result)) {
+        const sensoresYSwitches = msg.result.filter(
+          (entity: any) =>
+            entity.entity_id.includes("sensor") ||
+            entity.entity_id.includes("switch"),
+        );
+
         console.log("\n=== DISPOSITIVOS DETECTADOS EN HOME ASSISTANT ===");
-        console.table(sensoresYSwitches.map((s: any) => ({
-          ID: s.entity_id,
-          Nombre: s.attributes.friendly_name || "Sin nombre",
-          Estado: s.state,
-          Unidad: s.attributes.unit_of_measurement || ""
-        })));
+        console.table(
+          sensoresYSwitches.map((s: any) => ({
+            ID: s.entity_id,
+            Nombre: s.attributes.friendly_name || "Sin nombre",
+            Estado: s.state,
+            Unidad: s.attributes.unit_of_measurement || "",
+          })),
+        );
         console.log("================================================\n");
-        // --------------------------------------------------
 
         broadcastToUnity({
-          type: 'initial_state',
+          type: "initial_state",
           data: sensoresYSwitches.map((s: any) => ({
             entity: s.entity_id,
             state: s.state,
-            friendly_name: s.attributes.friendly_name
-          }))
+            friendly_name: s.attributes.friendly_name,
+          })),
         });
-      }
-
-      // MANEJO DE CAMBIOS EN TIEMPO REAL (Respuesta a subscribe_events)
-      else if (msg.type === 'event' && msg.event?.data?.new_state) {
+      } else if (msg.type === "event" && msg.event?.data?.new_state) {
         const entityId = msg.event.data.entity_id;
 
-        if (entityId.includes('switch') || entityId.includes('sensor')) {
+        if (entityId.includes("switch") || entityId.includes("sensor")) {
           broadcastToUnity({
-            type: 'state_change',
+            type: "state_change",
             entity: entityId,
-            state: msg.event.data.new_state?.state
+            state: msg.event.data.new_state?.state,
           });
         }
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Error al procesar mensaje de HA WebSocket:", e);
     }
   });
 
-  haWs.on('error', (err) => {
-    console.error('Error en HA WebSocket:', err);
+  haWs.on("error", (err: Error) => {
+    console.error("Error en el WebSocket de Home Assistant:", err.message);
   });
 
-  haWs.on('close', () => {
-    console.log('Desconectado de HA WebSocket, reintentando en 5s...');
+  haWs.on("close", () => {
+    console.warn(
+      "Desconectado del WebSocket de Home Assistant, reintentando en 5 segundos...",
+    );
     setTimeout(connectToHA, 5000);
   });
 }
 
-export function startHAWebsocketServer(server: any) {
+/**
+ * Inicializa el servidor WebSocket para clientes Unity y Frontend adjunto al servidor HTTP principal.
+ *
+ * @param {import('http').Server} server - Servidor HTTP principal de Express.
+ */
+export function startHAWebsocketServer(server: any): void {
   const wss = new WebSocketServer({ server });
 
-  wss.on('connection', (ws: WebSocket) => {
-    console.log('Cliente Unity/Frontend conectado al WebSocket');
+  wss.on("connection", (ws: WebSocket) => {
+    console.log("🎮 Cliente Unity/Frontend conectado al WebSocket");
     unityClients.add(ws);
 
-    ws.on('message', async (data: string) => {
+    ws.on("message", async (data: WebSocket.RawData) => {
       try {
-        const message = JSON.parse(data);
-        if (message.action === 'turn_on' || message.action === 'turn_off') {
+        const message = JSON.parse(data.toString());
+
+        if (message.action === "turn_on" || message.action === "turn_off") {
           const entityId = message.entity;
-          const service = message.action === 'turn_on' ? 'switch/turn_on' : 'switch/turn_off';
+          const service =
+            message.action === "turn_on" ? "switch/turn_on" : "switch/turn_off";
+
           try {
-            await axios.post(`${HA_HTTP_URL}/services/${service}`,
+            await axios.post(
+              `${HA_HTTP_URL}/services/${service}`,
               { entity_id: entityId },
-              { headers: { Authorization: `Bearer ${HA_TOKEN}`, 'Content-Type': 'application/json' } }
+              {
+                headers: {
+                  Authorization: `Bearer ${HA_TOKEN}`,
+                  "Content-Type": "application/json",
+                },
+              },
             );
-            console.log(`Comando ${message.action} enviado a ${entityId}`);
-          } catch (err: any) {
-            console.error('Error al enviar comando a HA:', err.message);
-            ws.send(JSON.stringify({ type: 'error', message: err.message }));
+            console.log(
+              `📡 Comando ${message.action} enviado exitosamente a ${entityId}`,
+            );
+          } catch (err: unknown) {
+            const errorMessage =
+              err instanceof Error ? err.message : "Error desconocido";
+            console.error(
+              "❌ Error al enviar comando a Home Assistant:",
+              errorMessage,
+            );
+            ws.send(JSON.stringify({ type: "error", message: errorMessage }));
           }
         }
-      } catch (e) {
-        console.error("Error al procesar mensaje de Unity/Frontend:", e);
+      } catch (e: unknown) {
+        console.error(
+          "❌ Error al procesar mensaje entrante de Unity/Frontend:",
+          e,
+        );
       }
     });
 
-    ws.on('close', () => {
+    ws.on("close", () => {
       unityClients.delete(ws);
-      console.log('Cliente Unity/Frontend desconectado');
+      console.log("🔌 Cliente Unity/Frontend desconectado");
     });
   });
 
-  // Iniciar la conexión a Home Assistant
   connectToHA();
-  console.log('Servidor WebSocket para Unity/Frontend adjunto al servidor HTTP principal');
+  console.log(
+    "🚀 Servidor WebSocket para Unity/Frontend adjunto correctamente al servidor HTTP",
+  );
 }
