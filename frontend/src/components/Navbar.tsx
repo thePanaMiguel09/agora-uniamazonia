@@ -6,7 +6,8 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  Radio,
 } from "lucide-react";
 import {
   useState,
@@ -454,6 +455,14 @@ export default function Navbar() {
               >
                 <Activity size={16} className="text-emerald-400" />
                 <span className="text-sm font-medium">Laboratorios</span>
+              </button>
+
+              <button
+                className="flex items-center gap-2 p-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg border border-gray-600 transition-all duration-200 cursor-pointer"
+                onClick={() => handleNavigation("/sensors")}
+              >
+                <Radio size={16} className="text-emerald-400" />
+                <span className="text-sm font-medium">Sensores</span>
               </button>
 
               {isAdmin && (
