@@ -15,6 +15,8 @@ export default function SummaryCard({
   icon: Icon,
   iconColor = "text-gray-500",
 }: SummaryCardProps) {
+  const isTailwindClass = iconColor.startsWith("bg-");
+
   return (
     <div
       className="bg-white p-3 rounded-lg border border-gray-200 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 w-full min-h-[90px] flex flex-col justify-between group/card"
@@ -24,10 +26,10 @@ export default function SummaryCard({
       <div className="flex items-center gap-2">
         {Icon && (
           <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm transition-transform duration-300 group-hover/card:scale-105`}
-            style={{ backgroundColor: iconColor }}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm transition-transform duration-300 group-hover/card:scale-105 ${isTailwindClass ? iconColor : ""}`}
+            style={isTailwindClass ? undefined : { backgroundColor: iconColor }}
           >
-            <Icon size={16} className="text-white" />
+            <Icon size={16} className="text-white" aria-hidden="true" />
           </div>
         )}
         <p className="font-bold text-gray-900 text-[14px] uppercase tracking-tight leading-tight">
